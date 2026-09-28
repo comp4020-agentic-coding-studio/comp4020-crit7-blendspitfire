@@ -7,16 +7,6 @@ import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 // boots (see src/lib/db.ts), locally and deployed. Never edit the database
 // by hand: state on the deployed volume outlives every deploy, and the
 // migration trail is what keeps old state and new code compatible.
-export const messages = sqliteTable("messages", {
-  id: int().primaryKey({ autoIncrement: true }),
-  body: text().notNull(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(datetime('now'))`),
-});
-
-export type Message = typeof messages.$inferSelect;
-
 // Buildings and their hours are reference data in src/data/buildings.ts;
 // building_number points into that list. Ratings are 1–5, higher is better
 // (5 = silent, 5 = comfortable). Rows seeded to fill the page before real

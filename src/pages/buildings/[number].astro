@@ -1,0 +1,117 @@
+---
+import { buildings, hoursFor } from "../../data/buildings";
+import Page from "../../layouts/Page.astro";
+import { listReviews } from "../../lib/db";
+import { accessAt } from "../../lib/hours";
+import { accessLabel, useLabel } from "../../lib/labels";
+
+const building = buildings.find((b) => b.number === Astro.params.number);
+if (!building) {
+  return new Response("Not found", { status: 404 });
+}
+
+const hours = hoursFor(building);
+const now = accessAt(building, new Date());
+const reviews = listReviews(building.number);
+const mean = (key: "quietness" | "comfort") =>
+  reviews.length ? (reviews.reduce((sum, r) => sum + r[key], 0) / reviews.length).toFixed(1) : "–";
+const anyInvented = hours.windows.some((w) => w.source === "invented");
+const dayLabel = { weekdays: "Mon–Fri", weekends: "Sat–Sun" };
+---
+
+<Page title={`${building.name} · Study spots`}>
+  <p><a href="/">← All buildings</a></p>
+  <h1>{building.name}</h1>
+  <p>
+    Building {building.number} · map grid {building.grid} · {useLabel[building.use]}
+  </p>
+  <p class={`access access-${now}`}>Right now: {accessLabel[now]}</p>
+
+  <h2>Opening hours</h2>
+  {
+    hours.windows.length === 0 ? (
+      <p>No public hours.</p>
+    ) : (
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Days</th>
+            <th scope="col">Time</th>
+            <th scope="col">Access</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hours.windows.map((w) => (
+            <tr>
+              <td>{dayLabel[w.days]}</td>
+              <td>
+                {w.from}–{w.to}
+              </td>
+              <td>
+                {accessLabel[w.access]}
+                {w.source === "invented" && <span class="unverified">unverified</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  <p class="note">
+    Outside these times the building is closed. Public holidays aren't shown.
+    {anyInvented && " Times marked unverified are estimates, not published by ANU."}
+    {
+      hours.url && (
+        <>
+          {" "}
+          Published times from <a href={hours.url}>this ANU page</a>, checked {hours.checked}.
+        </>
+      )
+    }
+  </p>
+
+  <h2>What it's like</h2>
+  <p>
+    Quiet {mean("quietness")}/5 · Comfort {mean("comfort")}/5 · {reviews.length}
+    {reviews.length === 1 ? " review" : " reviews"}
+  </p>
+  <ul class="reviews">
+    {
+      reviews.map((r) => (
+        <li>
+          <p>{r.comment}</p>
+          <p class="note">
+            {r.author} · quiet {r.quietness}/5 · comfort {r.comfort}/5
+            {r.placeholder && <span class="unverified">sample review</span>}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2>Leave a review</h2>
+  <form method="post" action="/api/reviews" class="review-form">
+    <input type="hidden" name="building" value={building.number} />
+    <label>
+      Your name
+      <input name="author" required maxlength="60" />
+    </label>
+    <label>
+      Quiet (5 = silent)
+      <select name="quietness" required>
+        {[5, 4, 3, 2, 1].map((n) => <option value={n}>{n}</option>)}
+      </select>
+    </label>
+    <label>
+      Comfort (5 = best seats)
+      <select name="comfort" required>
+        {[5, 4, 3, 2, 1].map((n) => <option value={n}>{n}</option>)}
+      </select>
+    </label>
+    <label class="wide">
+      What's it like to study here?
+      <textarea name="comment" required maxlength="1000" rows="3"></textarea>
+    </label>
+    <button>Post review</button>
+  </form>
+</Page>

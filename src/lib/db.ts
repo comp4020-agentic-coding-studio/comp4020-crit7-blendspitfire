@@ -1,10 +1,10 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import Database from "better-sqlite3";
-import { desc } from "drizzle-orm";
+import { avg, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { type Message, messages } from "./schema";
+import { type Review, reviews } from "./schema";
 
 // One SQLite file is the app's whole persistent state. In production
 // fly.toml points DATABASE_PATH at the machine's volume (/data), which is
@@ -24,12 +24,48 @@ export const db = drizzle(client);
 // commit the migration it writes to drizzle/.
 migrate(db, { migrationsFolder: "./drizzle" });
 
-export type { Message };
+export type { Review };
 
-export function listMessages(): Message[] {
-  return db.select().from(messages).orderBy(desc(messages.id)).limit(50).all();
+export interface Ratings {
+  quietness: number;
+  comfort: number;
+  count: number;
 }
 
-export function addMessage(body: string): Message {
-  return db.insert(messages).values({ body }).returning().get();
+export function listReviews(buildingNumber: string): Review[] {
+  return db
+    .select()
+    .from(reviews)
+    .where(eq(reviews.buildingNumber, buildingNumber))
+    .orderBy(desc(reviews.id))
+    .all();
+}
+
+export function ratingsByBuilding(): Map<string, Ratings> {
+  const rows = db
+    .select({
+      buildingNumber: reviews.buildingNumber,
+      quietness: avg(reviews.quietness),
+      comfort: avg(reviews.comfort),
+      count: count(),
+    })
+    .from(reviews)
+    .groupBy(reviews.buildingNumber)
+    .all();
+  return new Map(
+    rows.map((r) => [
+      r.buildingNumber,
+      { quietness: Number(r.quietness), comfort: Number(r.comfort), count: r.count },
+    ]),
+  );
+}
+
+export function addReview(review: {
+  buildingNumber: string;
+  author: string;
+  quietness: number;
+  comfort: number;
+  comment: string;
+}): Review {
+  return db.insert(reviews).values(review).returning().get();
 }

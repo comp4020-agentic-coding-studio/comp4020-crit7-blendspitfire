@@ -15,6 +15,20 @@
       "when": 1790581655229,
       "tag": "0001_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790582160935,
+      "tag": "0002_drop_guestbook",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790582240428,
+      "tag": "0003_placeholder_reviews",
+      "breakpoints": true
     }
   ]
 }

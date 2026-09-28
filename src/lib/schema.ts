@@ -16,3 +16,22 @@ export const messages = sqliteTable("messages", {
 });
 
 export type Message = typeof messages.$inferSelect;
+
+// Buildings and their hours are reference data in src/data/buildings.ts;
+// building_number points into that list. Ratings are 1–5, higher is better
+// (5 = silent, 5 = comfortable). Rows seeded to fill the page before real
+// reviews exist have placeholder = true, so they can be found and removed.
+export const reviews = sqliteTable("reviews", {
+  id: int().primaryKey({ autoIncrement: true }),
+  buildingNumber: text("building_number").notNull(),
+  author: text().notNull(),
+  quietness: int().notNull(),
+  comfort: int().notNull(),
+  comment: text().notNull(),
+  placeholder: int({ mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export type Review = typeof reviews.$inferSelect;

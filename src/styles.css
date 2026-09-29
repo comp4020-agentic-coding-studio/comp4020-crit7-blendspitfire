@@ -43,6 +43,31 @@ a {
   color: #a1261d;
 }
 
+.error {
+  color: #a1261d;
+  font-weight: 600;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-block-end: 1rem;
+}
+
+.filters label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.filters .checkbox {
+  flex-direction: row;
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
 .unverified {
   margin-inline-start: 0.5rem;
   padding: 0 0.4rem;

@@ -26,6 +26,12 @@ const rows = buildings
       a.building.name.localeCompare(b.building.name),
   );
 
+const useFilter = Astro.url.searchParams.get("use") ?? "";
+const openOnly = Astro.url.searchParams.get("open") === "1";
+const visibleRows = rows.filter(
+  (r) => (!useFilter || r.building.use === useFilter) && (!openOnly || r.access === "open"),
+);
+
 const clock = new Intl.DateTimeFormat("en-AU", {
   timeZone: "Australia/Canberra",
   weekday: "long",
@@ -40,9 +46,28 @@ const clock = new Intl.DateTimeFormat("en-AU", {
     It's {clock} in Canberra. Buildings you can walk into come first, then ones that
     need your ANU card, then the ones that are shut.
   </p>
+  <form method="get" class="filters">
+    <label>
+      Type
+      <select name="use">
+        <option value="">All types</option>
+        {Object.entries(useLabel).map(([use, label]) => (
+          <option value={use} selected={useFilter === use}>
+            {label}
+          </option>
+        ))}
+      </select>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="open" value="1" checked={openOnly} />
+      Open right now only
+    </label>
+    <button>Apply</button>
+  </form>
+  {visibleRows.length === 0 && <p>No buildings match.</p>}
   <ul class="buildings">
     {
-      rows.map(({ building, access, unverified, rating }) => (
+      visibleRows.map(({ building, access, unverified, rating }) => (
         <li>
           <a href={`/buildings/${building.number}/`}>{building.name}</a>
           <span class={`access access-${access}`}>

@@ -8,7 +8,8 @@ const rating = (value: FormDataEntryValue | null): number | undefined => {
 };
 
 // A plain form POST: store the review, then 303 back to the building page so
-// the browser re-renders it from the database. Invalid input stores nothing.
+// the browser re-renders it from the database. Invalid input stores nothing
+// and sends the visitor back with ?error= so they know why.
 export const POST: APIRoute = async ({ request, redirect }) => {
   const form = await request.formData();
   const number = String(form.get("building") ?? "");
@@ -21,8 +22,18 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   const quietness = rating(form.get("quietness"));
   const comfort = rating(form.get("comfort"));
 
-  if (author && comment && quietness && comfort) {
-    addReview({ buildingNumber: number, author, quietness, comfort, comment });
+  const missing: string[] = [];
+  if (!author) missing.push("your name");
+  if (!comment) missing.push("a comment");
+  if (!quietness) missing.push("a quietness rating (1–5)");
+  if (!comfort) missing.push("a comfort rating (1–5)");
+
+  const url = `/buildings/${encodeURIComponent(number)}/`;
+  if (missing.length > 0 || !quietness || !comfort) {
+    const message = `Review not saved — missing ${missing.join(", ")}.`;
+    return redirect(`${url}?error=${encodeURIComponent(message)}`, 303);
   }
-  return redirect(`/buildings/${encodeURIComponent(number)}/`, 303);
+
+  addReview({ buildingNumber: number, author, quietness, comfort, comment });
+  return redirect(url, 303);
 };

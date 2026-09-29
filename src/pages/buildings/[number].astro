@@ -5,6 +5,7 @@ import { listReviews } from "../../lib/db";
 import { accessAt } from "../../lib/hours";
 import { accessLabel, useLabel } from "../../lib/labels";
 import { relativeDay } from "../../lib/time";
+import { photosFor } from "../../data/photos";
 
 const building = buildings.find((b) => b.number === Astro.params.number);
 if (!building) {
@@ -20,11 +21,23 @@ const mean = (key: "quietness" | "comfort") =>
   reviews.length ? (reviews.reduce((sum, r) => sum + r[key], 0) / reviews.length).toFixed(1) : "–";
 const anyInvented = hours.windows.some((w) => w.source === "invented");
 const dayLabel = { weekdays: "Mon–Fri", weekends: "Sat–Sun" };
+const photos = photosFor(building);
 ---
 
 <Page title={`${building.name} · Study spots`}>
   <p><a href="/">← All buildings</a></p>
   <h1>{building.name}</h1>
+  {
+    photos && (
+      <figure class="hero-photo">
+        <img src={photos.hero.src} alt={photos.hero.alt} />
+        <figcaption class="photo-credit">
+          Photo: {photos.hero.credit.author}, {photos.hero.credit.license} —{" "}
+          <a href={photos.hero.credit.sourceUrl}>source</a>
+        </figcaption>
+      </figure>
+    )
+  }
   <p>
     Building {building.number} · map grid {building.grid} · {useLabel[building.use]}
   </p>
@@ -75,6 +88,22 @@ const dayLabel = { weekdays: "Mon–Fri", weekends: "Sat–Sun" };
       )
     }
   </p>
+
+  {
+    photos?.gallery && photos.gallery.length > 0 && (
+      <div class="gallery">
+        {photos.gallery.map((photo) => (
+          <figure>
+            <img src={photo.src} alt={photo.alt} />
+            <figcaption class="photo-credit">
+              Photo: {photo.credit.author}, {photo.credit.license} —{" "}
+              <a href={photo.credit.sourceUrl}>source</a>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    )
+  }
 
   <h2>What it's like</h2>
   <p>

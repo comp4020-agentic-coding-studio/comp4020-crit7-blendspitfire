@@ -4,6 +4,7 @@ import Page from "../layouts/Page.astro";
 import { ratingsByBuilding } from "../lib/db";
 import { type AccessNow, windowAt } from "../lib/hours";
 import { accessLabel, useLabel } from "../lib/labels";
+import { photosFor } from "../data/photos";
 
 const at = new Date();
 const ratings = ratingsByBuilding();
@@ -67,20 +68,38 @@ const clock = new Intl.DateTimeFormat("en-AU", {
   {visibleRows.length === 0 && <p>No buildings match.</p>}
   <ul class="buildings">
     {
-      visibleRows.map(({ building, access, unverified, rating }) => (
-        <li>
-          <a href={`/buildings/${building.number}/`}>{building.name}</a>
-          <span class={`access access-${access}`}>
-            {accessLabel[access]}
-            {unverified && <span class="unverified">unverified</span>}
-          </span>
-          <p class="note">
-            {useLabel[building.use]} · building {building.number}
-            {rating &&
-              ` · quiet ${rating.quietness.toFixed(1)}/5 · comfort ${rating.comfort.toFixed(1)}/5`}
-          </p>
-        </li>
-      ))
+      visibleRows.map(({ building, access, unverified, rating }) => {
+        const photos = photosFor(building);
+        return (
+          <li class="building-card">
+            {photos ? (
+              <img
+                class="building-card__img"
+                src={photos.hero.src}
+                alt={photos.hero.alt}
+                loading="lazy"
+              />
+            ) : (
+              <div class="building-card__placeholder" aria-hidden="true">
+                No photo
+              </div>
+            )}
+            <div class="building-card__body">
+              <span class="eyebrow">{useLabel[building.use]}</span>
+              <a href={`/buildings/${building.number}/`}>{building.name}</a>
+              <span class={`access access-${access}`}>
+                {accessLabel[access]}
+                {unverified && <span class="unverified">unverified</span>}
+              </span>
+              <p class="note">
+                building {building.number}
+                {rating &&
+                  ` · quiet ${rating.quietness.toFixed(1)}/5 · comfort ${rating.comfort.toFixed(1)}/5`}
+              </p>
+            </div>
+          </li>
+        );
+      })
     }
   </ul>
 </Page>
